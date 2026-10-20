@@ -1,0 +1,62 @@
+{
+  "det_train": {
+    "images": 7550,
+    "boxes_per_class": {
+      "pothole": 4256,
+      "alligator_crack": 3220,
+      "transverse_crack": 2403,
+      "longitudinal_crack": 4828
+    },
+    "negatives": 920
+  },
+  "det_val": {
+    "images": 942,
+    "boxes_per_class": {
+      "alligator_crack": 398,
+      "longitudinal_crack": 594,
+      "transverse_crack": 264,
+      "pothole": 573
+    },
+    "negatives": 128
+  },
+  "det_test": {
+    "images": 938,
+    "boxes_per_class": {
+      "alligator_crack": 402,
+      "transverse_crack": 325,
+      "pothole": 472,
+      "longitudinal_crack": 631
+    },
+    "negatives": 102
+  },
+  "unseen_czech": {
+    "images": 1232,
+    "boxes_per_class": {
+      "longitudinal_crack": 988,
+      "transverse_crack": 399,
+      "alligator_crack": 161,
+      "pothole": 197
+    }
+  },
+  "seg_train": {
+    "images": 1490,
+    "outlines_per_class": {
+      "pothole": 1667,
+      "crack": 1457
+    }
+  },
+  "seg_val": {
+    "images": 253,
+    "outlines_per_class": {
+      "pothole": 234,
+      "crack": 311
+    }
+  },
+  "seg_test": {
+    "images": 537,
+    "outlines_per_class": {
+      "pothole": 146,
+      "crack": 870
+    }
+  }
+}
