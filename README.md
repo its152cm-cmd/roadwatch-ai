@@ -185,9 +185,21 @@ From `scripts/error_analysis.py` (test set, confidence ≥ 0.25). Galleries: `re
 - **Wrong-class confusions are rare (26 in total):** when the model finds damage, it usually names the type correctly. Most are alligator ↔ longitudinal cracks, where cracks branch into each other.
 - **Transverse cracks are missed most often** (154 missed vs 170 found): they are thin, short and the rarest class in training.
 - **False alarms and misses are roughly balanced** at the default confidence (0.25). Raising the threshold reduces false alarms at the cost of more misses; this can be tuned per use case.
-- **Main causes** *(from the error galleries)*: see the bullets below, updated after reviewing the images.
+**Main causes (from reviewing the most confident errors)**
 
-<!-- ERROR-CAUSES -->
+| Error type | Cause | Example |
+|---|---|---|
+| "False alarm" | **Real but unlabelled cracks.** Many high-confidence "false" crack detections show genuine thin cracks the RDD2022 annotators did not box, so true precision is likely **higher** than reported | Clear longitudinal cracks next to lane markings scored as false |
+| False alarm | **Tree shadows and lane markings:** long thin dark shadows look like longitudinal cracks | Shadow stripes across the road → "longitudinal crack 0.84" |
+| False alarm | **Dark stains, wet patches and repairs** look like potholes | Dark patch / blurred dark spot → "pothole 0.80" |
+| False alarm | **Rough road texture** mistaken for alligator cracking | Coarse worn asphalt → "alligator crack" |
+| Wrong class | **Branching cracks** sit between longitudinal and alligator | Crack networks labelled longitudinal, predicted alligator |
+| Missed | **Annotation granularity:** one huge box around a whole damaged area, while the model predicts several smaller potholes, so the large box counts as missed | Close-up photos of many merged potholes |
+| Missed | **Faint, distant, low-contrast damage** in dashcam frames (India), barely visible even to humans | Fine alligator cracking far ahead of the car hood |
+| Missed | **Water-filled potholes** look like puddles or reflections | Flooded pothole with sky reflection |
+| Robustness | **Fine detail destroyed:** blur and compression erase crack edges (0 found); **rain streaks are mistaken for damage** (one large false "pothole") | `results/robustness_examples.jpg` |
+
+**Improvements suggested by these errors:** re-check labels on the most confident "false alarms"; add shadow, wet-road and repaired-patch images as hard negatives; label potholes individually rather than as large areas; add blur, rain and compression augmentation in training; and recalibrate the quality check on street-level footage.
 
 ---
 
