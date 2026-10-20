@@ -12,8 +12,13 @@ It is built to run on road-inspection robots, drones or vehicle cameras, turning
 
 > ⚠️ RoadWatch AI is a decision-support prototype. Its detections are **not official infrastructure safety
 > assessments** and should be verified by qualified road inspectors.
-![RoadWatch AI demo: image](assets/demo_image.png)
-![RoadWatch AI demo: video tracking](assets/demo_video.png)
+
+## 🎬 Demo
+
+**▶️ Demo video:** [Watch on YouTube / Google Drive](https://drive.google.com/drive/folders/1xOgz_md-vEJ1JVoqYXWpHIdOK24Y_RNy?usp=drive_link): data collection → training → testing → live app demo
+
+![RoadWatch AI demo: image detection with segmentation and privacy blur](assets/demo_image.png)
+![RoadWatch AI demo: video tracking with unique hazard counts](assets/demo_video.png)
 
 ---
 
@@ -55,6 +60,24 @@ flowchart LR
 | Demo | Gradio web app (image + video tabs) |
 
 ---
+
+## 🧠 Models
+
+| | Detection model | Segmentation model |
+|---|---|---|
+| File | `weights/roadwatch_det.pt` (22.5 MB) | `weights/roadwatch_seg.pt` (7.0 MB) |
+| Architecture | YOLOv8s (11.1 M parameters) | YOLOv8n-seg (3.4 M parameters) |
+| Classes | longitudinal crack, transverse crack, alligator crack, pothole | pothole, crack |
+| Starting point | COCO-pretrained `yolov8s.pt` (transfer learning) | COCO-pretrained `yolov8n-seg.pt` |
+| Training data | 7,550 images (RDD2022 + Roboflow + negatives) | 1,490 images (Roboflow + CRACK500) |
+| Training | 85 epochs (early stop, best at epoch 70), 2.3 h | 40 epochs, 12 min |
+| Settings | image size 640, batch 16, AdamW (auto), cosine LR, mosaic, HSV/rotation/scale/flip augmentation | image size 640, batch 16 |
+| Hardware | NVIDIA RTX 5050 Laptop GPU (8 GB) | same |
+| Speed | about 6 ms per image | about 2.5 ms per image |
+| Test result | mAP@0.5 **0.562** (4 classes) | mask mAP@0.5 **0.764** (pothole), 0.352 (crack) |
+
+A COCO-pretrained YOLOv8n (`yolov8n.pt`, downloaded automatically) is used only for the privacy filter (people and vehicles).
+An earlier pothole-only model from a previous project of ours was used as a baseline reference only; all models above were trained during the hackathon.
 
 ## 📊 Datasets
 
