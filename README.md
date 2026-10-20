@@ -12,6 +12,8 @@ It is built to run on road-inspection robots, drones or vehicle cameras, turning
 
 > ⚠️ RoadWatch AI is a decision-support prototype. Its detections are **not official infrastructure safety
 > assessments** and should be verified by qualified road inspectors.
+![RoadWatch AI demo: image](assets/demo_image.png)
+![RoadWatch AI demo: video tracking](assets/demo_video.png)
 
 ---
 
