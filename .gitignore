@@ -1,0 +1,20 @@
+# data and training outputs (too large for GitHub)
+datasets/
+runs/
+data/
+*.zip
+# model weights: keep only the final small ones in weights/
+*.pt
+!weights/roadwatch_det.pt
+!weights/roadwatch_seg.pt
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.idea/
+.gradio/
+flagged/
+
+configs/
+results/extra_negatives_used.txt

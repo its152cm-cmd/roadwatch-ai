@@ -1,0 +1,10 @@
+ultralytics>=8.3.0
+opencv-python>=4.8
+numpy
+pillow
+matplotlib
+gradio>=5.0
+imageio>=2.31
+imageio-ffmpeg>=0.5
+lap>=0.5.12            # needed for video tracking (ByteTrack)
+# GPU: install PyTorch with CUDA first, following https://pytorch.org/get-started/locally/
