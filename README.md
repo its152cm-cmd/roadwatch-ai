@@ -75,95 +75,131 @@ flowchart LR
 - **Held-out country:** Czech images are never used in training and serve as an *unseen-country* test
 - Training augmentation: brightness/saturation, rotation, translation, scale, flips, mosaic
 
-<!-- Paste results/dataset_summary.json numbers here -->
-| Split | Images | Notes |
-|---|---|---|
-| Train | _fill in_ | |
-| Validation | _fill in_ | |
-| Test | _fill in_ | never used in training or tuning |
-| Unseen country (Czech) | _fill in_ | never used in training |
+| Split | Images | Boxes (long. / trans. / alligator / pothole) | Notes |
+|---|---|---|---|
+| Train | 7,550 | 4,828 / 2,403 / 3,220 / 4,256 | includes damage-free negatives |
+| Validation | 942 | 594 / 264 / 398 / 573 | used for model selection |
+| Test | 938 | 631 / 325 / 402 / 472 | **never used in training or tuning** |
+| Unseen country (Czech) | 1,232 | 988 / 399 / 161 / 197 | **country never seen in training** |
+| Segmentation train / val / test | 1,490 / 253 / 537 | pothole + crack outlines | Roboflow + CRACK500 |
 
 ---
 
 ## 📈 Results
 
-> All numbers below come from `scripts/evaluate.py`, `scripts/robustness.py` and `scripts/error_analysis.py`
-> on data the model never saw during training. Replace the placeholders with `results/summary.md`.
+> All numbers come from `scripts/evaluate.py`, `scripts/robustness.py`, `scripts/error_analysis.py` and
+> `scripts/image_level_test.py`, on data the models never saw during training.
+> Detection model: YOLOv8s, 85 epochs (early-stopped, best at epoch 70), RTX 5050 Laptop GPU, about 6 ms per image.
 
-### Test set: per-class performance
+### ⭐ Key findings
+- **Test-set mAP@0.5 = 0.562** across 4 hazard types, matching validation (0.574), so the model is not overfitting.
+- **Independent dataset:** finds a pothole in **81%** of unseen pothole photos with only **1%** false alarms on clean roads.
+- **Segmentation outlines potholes better than boxes do:** box mAP@0.5 0.776 vs 0.740 on identical images.
+- **Robust to low light (−5%) and glare (−14%)**, but **heavy motion blur and rain break the model**, and the quality check does not yet catch them reliably (see Robustness).
+- **Big drop on an unseen country** (Czech: 0.157 vs 0.562), which shows road-damage AI needs **local training data** before deployment (e.g. Malaysian roads).
+
+### Test set: per-class detection performance
 | Class | Precision | Recall | F1 | mAP@0.5 | mAP@0.5:0.95 |
 |---|---|---|---|---|---|
-| Longitudinal crack | | | | | |
-| Transverse crack | | | | | |
-| Alligator crack | | | | | |
-| Pothole | | | | | |
-| **All** | | | | | |
+| Longitudinal crack | 0.620 | 0.566 | 0.591 | 0.598 | 0.315 |
+| Transverse crack | 0.604 | 0.465 | 0.526 | 0.510 | 0.215 |
+| Alligator crack | 0.636 | 0.590 | 0.612 | 0.606 | 0.300 |
+| Pothole | 0.610 | 0.496 | 0.547 | 0.535 | 0.253 |
+| **All** | **0.617** | **0.529** | **0.570** | **0.562** | **0.271** |
 
-### Unseen country (Czech)
-| | Precision | Recall | F1 | mAP@0.5 |
-|---|---|---|---|---|
-| All classes | | | | |
+![Confusion matrix](results/confusion_matrix_normalized_test.png)
 
-### Detection vs segmentation (same pothole test images)
-| Model | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 |
+### Unseen country (Czech, never in training)
+| Class | Precision | Recall | F1 | mAP@0.5 |
 |---|---|---|---|---|
-| Detection (box) | | | | |
-| Segmentation (box) | | | | |
-| Segmentation (mask) | | | | |
+| Longitudinal crack | 0.485 | 0.234 | 0.315 | 0.254 |
+| Transverse crack | 0.276 | 0.301 | 0.288 | 0.171 |
+| Alligator crack | 0.126 | 0.429 | 0.195 | 0.139 |
+| Pothole | 0.157 | 0.112 | 0.131 | 0.064 |
+| **All** | **0.261** | **0.269** | **0.265** | **0.157** |
+
+Performance drops sharply on a country absent from training (different road surfaces, camera setup and
+annotation style). Cracks transfer better than potholes. **Takeaway:** a few hundred labelled local images
+are needed before deploying in a new country; this is our first next step for Malaysia.
+
+### Detection vs segmentation (identical 72 pothole test images)
+| Model | Precision | Recall | F1 | mAP@0.5 | mAP@0.5:0.95 |
+|---|---|---|---|---|---|
+| Detection (box) | 0.692 | 0.712 | 0.702 | 0.740 | 0.413 |
+| Segmentation (box) | 0.709 | 0.740 | 0.724 | **0.776** | **0.474** |
+| Segmentation (mask) | 0.673 | 0.726 | 0.699 | 0.764 | 0.421 |
+
+The segmentation model (3.4 M parameters) localises potholes slightly better than the detector (11.1 M), and
+also gives the exact damaged area. The detector remains necessary for the three crack types.
 
 ### Segmentation: pixel outlines per class (test set)
 | Class | Mask precision | Mask recall | Mask F1 | Mask mAP@0.5 |
 |---|---|---|---|---|
-| Pothole | | | | |
-| Crack | | | | |
+| Pothole | 0.675 | 0.726 | 0.700 | 0.764 |
+| Crack | 0.544 | 0.382 | 0.448 | 0.352 |
+
+Thin cracks are much harder to outline than potholes: many fine crack pixels are missed (recall 0.38).
+The crack score is lower on test (0.35) than validation (0.61) because the CRACK500 test crops contain more
+hairline cracks.
 
 ### Independent image-level test (Road_Condition/Alert, never used in training)
 | Group | Images | Result | Rate |
 |---|---|---|---|
-| Pothole images | | pothole detected | |
-| Clean / smooth roads | | false alarm | |
+| Pothole images | 300 | 244 had a pothole detected | **81%** |
+| Clean / smooth roads | 251 | 3 had a false alarm | **1%** |
 
-### Robustness under different conditions
-| Condition | mAP@0.5 | Change vs clean | Flagged by quality check |
-|---|---|---|---|
-| Clean | | – | |
-| Low light | | | |
-| Motion blur | | | |
-| Rain | | | |
-| Glare | | | |
-| Fog | | | |
-| JPEG compression | | | |
+### Robustness under different conditions (400 test images, severe synthetic conditions)
+| Condition | Precision | Recall | mAP@0.5 | Change vs clean | Flagged by quality check |
+|---|---|---|---|---|---|
+| Clean | 0.604 | 0.511 | 0.561 | – | 5% |
+| Low light | 0.583 | 0.508 | 0.530 | **−5%** | 100% |
+| Glare | 0.536 | 0.480 | 0.483 | −14% | 96% |
+| Fog | 0.468 | 0.410 | 0.400 | −29% | 79% |
+| JPEG compression | 0.380 | 0.185 | 0.169 | −70% | 8% |
+| Motion blur | 0.441 | 0.028 | 0.016 | **−97%** | 52% |
+| Rain | 0.053 | 0.018 | 0.002 | **−100%** | 24% |
 
 ![Robustness chart](results/robustness_chart.png)
 ![Robustness examples](results/robustness_examples.jpg)
 
-### Confusion matrix
-![Confusion matrix](results/confusion_matrix_normalized_test.png)
+**What this shows**
+- **Lighting changes are handled well:** low light costs only 5% and glare 14%, thanks to brightness augmentation in training.
+- **Fine detail is the weak point:** motion blur, heavy rain streaks and strong compression destroy the thin crack edges the model relies on.
+- **The quality check catches lighting problems (79–100%) but misses many blur, rain and compression cases (8–52%).**
+  Its thresholds were calibrated on close-up pothole photos and need recalibrating on street-level footage (next step).
+- These synthetic conditions are deliberately **severe** (e.g. 25-pixel motion blur, about 1,000 rain streaks); real dashcam footage is usually milder.
 
 ---
 
 ## 🔍 Error analysis
 
-From `scripts/error_analysis.py` (see `results/errors_false_alarms.jpg`, `results/errors_misses.jpg`):
+From `scripts/error_analysis.py` (test set, confidence ≥ 0.25). Galleries: `results/errors_false_alarms.jpg`, `results/errors_misses.jpg`.
 
 | Class | Correct | False alarms | Missed | Wrong class |
 |---|---|---|---|---|
-| _fill in from results/error_analysis.md_ | | | | |
+| Longitudinal crack | 381 | 338 | 240 | 10 |
+| Transverse crack | 170 | 143 | 154 | 1 |
+| Alligator crack | 247 | 186 | 142 | 13 |
+| Pothole | 243 | 222 | 227 | 2 |
 
-**Main causes of errors** *(fill in after looking at the galleries)*
-- False alarms: e.g. shadows, wet patches, road markings, repair patches, traffic cones
-- Misses: e.g. small or distant hazards, low contrast, partly hidden damage
-- Confusions: e.g. alligator vs longitudinal cracks at crack junctions
+- **Wrong-class confusions are rare (26 in total):** when the model finds damage, it usually names the type correctly. Most are alligator ↔ longitudinal cracks, where cracks branch into each other.
+- **Transverse cracks are missed most often** (154 missed vs 170 found): they are thin, short and the rarest class in training.
+- **False alarms and misses are roughly balanced** at the default confidence (0.25). Raising the threshold reduces false alarms at the cost of more misses; this can be tuned per use case.
+- **Main causes** *(from the error galleries)*: see the bullets below, updated after reviewing the images.
+
+<!-- ERROR-CAUSES -->
 
 ---
 
 ## ⚠️ Limitations
 
 - **Not a measurement tool:** a single 2D image has no depth or scale, so RoadWatch AI does not measure pothole depth or real size. Severity estimation needs a calibrated, fixed-mount camera (future work).
-- **Data coverage:** training images come mainly from Japan, India and the US; no Malaysian road images yet. Performance may drop on very different roads, lighting or camera types.
-- **Class imbalance:** some crack types have far fewer examples than potholes, which lowers their accuracy.
+- **Data coverage / new countries:** training images come from Japan, India and the US; on Czech roads (never seen) mAP@0.5 fell from 0.562 to 0.157. No Malaysian road images yet; local data is needed before deployment.
+- **Class imbalance:** transverse cracks have the fewest examples and the lowest accuracy (mAP@0.5 0.51).
+- **Fine-detail conditions:** heavy motion blur, rain and strong compression almost completely break detection (see Robustness).
+- **Thin cracks in segmentation** are often only partly outlined (crack mask recall 0.38).
 - **Synthetic stress tests:** rain, fog and glare are simulated; real-weather footage may behave differently.
-- **Quality-check thresholds** are hand-calibrated heuristics; about 9% of clean images in calibration were flagged, and some degraded images are missed.
+- **Quality-check thresholds** are hand-calibrated heuristics: they catch lighting problems well but miss many blurred, rainy or heavily compressed images (8–52% flagged), and flag about 5% of clean images.
 - **Privacy filter** relies on a general-purpose detector and may miss small, distant or partly hidden people and plates.
 - **Some training photos** in public datasets are stock or web-scraped images (some with watermarks); these may bias the model, and the Road_Condition/Alert set contains augmented near-duplicates.
 - **CRACK500 cracks are close-up, top-down views** and have no crack-type labels, so the segmentation model outlines "crack" without telling crack types apart (the detection model does that).

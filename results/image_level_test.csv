@@ -1,0 +1,3 @@
+group,images,metric,count,rate
+Pothole images,300,pothole detected,244,0.8133333333333334
+Clean / smooth roads,251,false alarm (any damage),3,0.01195219123505976
